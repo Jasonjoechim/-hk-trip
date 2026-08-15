@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="HK Trip" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>Hong Kong 2026 — Trip Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --panel:#121729;
+    --panel-2:#181f37;
+    --accent:#ff3b6e;
+    --accent-2:#2dd4bf;
+    --gold:#f2b134;
+    --text:#f5f3ee;
+    --muted:#93a0bd;
+    --border:rgba(255,255,255,.09);
+    --shadow:0 18px 45px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(255,59,110,.12), transparent 32%),
+      radial-gradient(circle at 85% 8%, rgba(45,212,191,.10), transparent 34%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif; margin:0;}
+  button,input,textarea,select{font:inherit; font-size:16px; -webkit-appearance:none; appearance:none; touch-action:manipulation;}
+  button{cursor:pointer;}
+  input,textarea{
+    background:#0d1224; color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; outline:none; width:100%;
+  }
+  input:focus,textarea:focus{border-color:var(--accent-2); box-shadow:0 0 0 3px rgba(45,212,191,.15);}
+  textarea{resize:vertical; min-height:56px;}
+
+  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{
+    width:min(420px,100%); background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--border); border-radius:22px; box-shadow:var(--shadow); padding:32px 26px; text-align:center;
+  }
+  .login-eyebrow{color:var(--accent-2); letter-spacing:.16em; text-transform:uppercase; font-size:.72rem; font-weight:700;}
+  .login-card h1{font-size:2rem; margin:8px 0 4px; line-height:1.05;}
+  .login-sub{color:var(--muted); font-size:.92rem; margin-bottom:22px;}
+  .name-grid{display:grid; gap:10px;}
+  .name-btn{
+    background:#0d1224; border:1px solid var(--border); color:var(--text);
+    border-radius:14px; padding:14px 16px; font-weight:700; font-size:1.02rem;
+    display:flex; align-items:center; justify-content:space-between; transition:.15s ease;
+  }
+  .name-btn:hover{border-color:var(--accent-2); background:#101833;}
+  .name-btn .tag{font-size:.66rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#041127; background:var(--gold); padding:3px 8px; border-radius:999px;}
+  .swatch{width:10px; height:10px; border-radius:50%; margin-right:10px; display:inline-block; vertical-align:middle;}
+
+  header{
+    padding:12px 16px 10px; border-bottom:1px solid var(--border);
+    background:rgba(10,14,26,.85); backdrop-filter:blur(10px); position:sticky; top:0; z-index:10;
+  }
+  .wrap{width:min(880px, calc(100% - 24px)); margin:0 auto;}
+  .top-row{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .brand h1{font-size:1.15rem; letter-spacing:-.02em;}
+  .brand .sub{display:none;}
+  .who-pill{
+    border:1px solid rgba(242,177,52,.4); color:var(--gold); background:rgba(242,177,52,.08);
+    border-radius:999px; padding:5px 10px; font-weight:700; font-size:.74rem; white-space:nowrap;
+  }
+  .logout-link{color:var(--muted); font-size:.72rem; text-decoration:underline; cursor:pointer; margin-left:8px;}
+
+  .flight-strip{display:flex; gap:14px; margin-top:8px; overflow-x:auto; font-size:.76rem;}
+  .flight-chip{display:flex; align-items:baseline; gap:6px; white-space:nowrap; color:var(--muted);}
+  .flight-chip .fk{color:var(--accent-2); text-transform:uppercase; font-size:.63rem; font-weight:800; letter-spacing:.08em;}
+  .flight-chip .fv{font-weight:700; color:var(--text);}
+
+  main{padding:22px 0 70px;}
+  .status-bar{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px;}
+  .status-text{color:var(--muted); font-size:.8rem; display:flex; align-items:center; gap:6px;}
+  .dot-live{width:7px; height:7px; border-radius:50%; background:var(--accent-2); box-shadow:0 0 0 0 rgba(45,212,191,.6); animation:pulse 2s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(45,212,191,.5);}
+    70%{box-shadow:0 0 0 6px rgba(45,212,191,0);}
+    100%{box-shadow:0 0 0 0 rgba(45,212,191,0);}
+  }
+  .btn{border:1px solid var(--border); background:transparent; color:var(--text); padding:9px 14px; border-radius:10px; font-weight:700; font-size:.85rem;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#1a0510;}
+  .btn.ghost{color:var(--muted);}
+  .btn:disabled{opacity:.5;}
+
+  .day-card{
+    background:linear-gradient(180deg, rgba(24,31,55,.9), rgba(18,23,41,.9));
+    border:1px solid var(--border); border-radius:18px; margin-bottom:16px; overflow:hidden; box-shadow:var(--shadow);
+  }
+  .day-head{
+    padding:14px 18px; display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(90deg, rgba(255,59,110,.10), rgba(45,212,191,.06));
+  }
+  .day-head .dow{font-family:'Fraunces',serif; font-weight:700; font-size:1.15rem;}
+  .day-head .ddate{color:var(--muted); font-size:.8rem;}
+  .day-badge{font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid;}
+  .badge-out{color:var(--accent); border-color:rgba(255,59,110,.5); background:rgba(255,59,110,.08);}
+  .badge-back{color:var(--accent-2); border-color:rgba(45,212,191,.5); background:rgba(45,212,191,.08);}
+
+  .items{padding:10px 14px 6px;}
+  .item{padding:11px 12px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; background:rgba(255,255,255,.03); display:flex; gap:10px; align-items:flex-start;}
+  .item .stripe{width:4px; align-self:stretch; border-radius:4px; flex-shrink:0;}
+  .item-body{flex:1; min-width:0;}
+  .item-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
+  .item-title{font-weight:700; font-size:.95rem;}
+  .item-time{color:var(--gold); font-size:.76rem; font-weight:700; white-space:nowrap;}
+  .item-notes{color:var(--muted); font-size:.85rem; margin-top:3px; white-space:pre-wrap;}
+  .item-meta{display:flex; align-items:center; gap:8px; margin-top:6px;}
+  .author-chip{font-size:.7rem; font-weight:800; color:#0a0e1a; padding:2px 8px; border-radius:999px;}
+  .del-btn{margin-left:auto; background:none; border:none; color:var(--muted); font-size:.72rem; text-decoration:underline;}
+  .del-btn:hover{color:var(--accent);}
+  .empty-day{color:var(--muted); font-size:.83rem; padding:6px 4px 14px;}
+
+  .add-row{padding:8px 14px 14px;}
+  .add-toggle{width:100%; border:1px dashed var(--border); background:transparent; color:var(--muted); border-radius:12px; padding:10px; font-weight:700; font-size:.85rem;}
+  .add-toggle:hover{color:var(--text); border-color:var(--accent-2);}
+  .add-form{border:1px solid var(--border); border-radius:12px; padding:8px; background:rgba(0,0,0,.15); margin-top:2px; display:flex; gap:8px;}
+  .add-form input{flex:1;}
+
+  footer.legend{width:min(880px, calc(100% - 24px)); margin:0 auto 40px; display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:.78rem;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend .dot{width:9px; height:9px; border-radius:50%;}
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:#141b30; border:1px solid var(--border); color:var(--text);
+    padding:10px 16px; border-radius:999px; font-size:.82rem; font-weight:600;
+    box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:50;
+  }
+  .toast.show{opacity:1;}
+  .loading-full{min-height:100vh; display:flex; align-items:center; justify-content:center; color:var(--muted); text-align:center; padding:24px;}
+  .setup-warning{
+    max-width:520px; margin:60px auto; padding:22px; border:1px solid rgba(255,59,110,.4);
+    background:rgba(255,59,110,.08); border-radius:14px; color:var(--text); font-size:.9rem; line-height:1.5;
+  }
+  .setup-warning code{background:#0d1224; padding:2px 6px; border-radius:6px; font-size:.85em;}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen" class="loading-full">Loading trip board…</div>
+<div id="app-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // 1. SET THIS to your Firebase Realtime Database URL before
+  //    hosting — see the setup steps you were given alongside
+  //    this file. It looks like:
+  //    https://YOUR-PROJECT-default-rtdb.YOUR-REGION.firebasedatabase.app
+  // ============================================================
+  const FIREBASE_DB_URL = "https://hk-trip-2026-286d0-default-rtdb.europe-west1.firebasedatabase.app";
+  const TRIP_PATH = `${FIREBASE_DB_URL}/trip`;
+
+  const ADMIN_NAME = "Jason";
+  const TRAVELERS = [
+    { name: "Jason",    color: "#f2b134" },
+    { name: "Jennifer", color: "#ff3b6e" },
+    { name: "Liz",      color: "#2dd4bf" },
+    { name: "Tommy",    color: "#8b8dff" }
+  ];
+  const REFRESH_INTERVAL_MS = 15000; // poll for others' changes every 15s
+
+  function dateRange(startISO, endISO){
+    const out = [];
+    let d = new Date(startISO + "T00:00:00");
+    const end = new Date(endISO + "T00:00:00");
+    while (d <= end){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+    return out;
+  }
+  const ALL_DAYS = dateRange("2026-11-18","2026-12-04");
+
+  // Drop any day that has fully passed (keeps today). Recomputed each
+  // render so the list quietly shrinks as the trip goes on — works off
+  // the viewer's own device clock/timezone.
+  function upcomingDays(){
+    const todayISO = new Date().toISOString().slice(0,10);
+    return ALL_DAYS.filter(d => d >= todayISO);
+  }
+
+  function fmtDay(iso){
+    const d = new Date(iso + "T00:00:00");
+    return {
+      dow: d.toLocaleDateString("en-GB", { weekday: "long" }),
+      ddate: d.toLocaleDateString("en-GB", { day: "numeric", month: "long" })
+    };
+  }
+  function escapeHtml(v){
+    return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function travelerColor(name){
+    const t = TRAVELERS.find(t => t.name === name);
+    return t ? t.color : "#93a0bd";
+  }
+  function makeId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+  let items = [];
+  let currentUser = null;
+  let openAddFor = null;
+  let pollHandle = null;
+  let saving = false;
+
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+
+  // ---------- Firebase REST (same pattern as the football app) ----------
+
+  async function fetchJson(url, options = {}, attempt = 1){
+    try {
+      const res = await fetch(url, { cache: "no-store", ...options });
+      if (!res.ok){
+        if (attempt < 3){ await new Promise(r => setTimeout(r, 400*attempt)); return fetchJson(url, options, attempt+1); }
+        return { ok:false, reason:"status " + res.status };
+      }
+      const data = await res.json();
+      return { ok:true, data };
+    } catch (e){
+      if (attempt < 3){ await new Promise(r => setTimeout(r, 400*attempt)); return fetchJson(url, options, attempt+1); }
+      return { ok:false, reason: e.message || "network error" };
+    }
+  }
+
+  // Firebase can return a stored array as an object with numeric string
+  // keys instead of a true array — normalize either shape.
+  function firebaseValueToArray(value){
+    if (Array.isArray(value)) return value;
+    if (value && typeof value === "object"){
+      return Object.keys(value).sort((a,b)=>Number(a)-Number(b)).map(k => value[k]);
+    }
+    return [];
+  }
+
+  async function loadItems({ silent } = {}){
+    const result = await fetchJson(`${TRIP_PATH}/items.json`);
+    if (!result.ok) return result;
+    items = firebaseValueToArray(result.data);
+    return { ok:true };
+  }
+
+  async function saveItems(){
+    saving = true;
+    setStatus("Saving…");
+    const result = await fetchJson(`${TRIP_PATH}/items.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(items)
+    });
+    saving = false;
+    if (!result.ok){ setStatus("Not saved — will retry"); showToast(`Couldn't save (${result.reason})`); return false; }
+    setStatus("Live");
+    return true;
+  }
+
+  // ---------- Rendering ----------
+
+  function renderLoginScreen(){
+    document.getElementById("app-root").innerHTML = `
+      <div id="loginScreen">
+        <div class="login-card">
+          <div class="login-eyebrow">Hong Kong · 18 Nov – 4 Dec 2026</div>
+          <h1>Who's this?</h1>
+          <div class="login-sub">Pick your name to see and add to the itinerary.</div>
+          <div class="name-grid" id="nameGrid"></div>
+        </div>
+      </div>
+    `;
+    const grid = document.getElementById("nameGrid");
+    grid.innerHTML = TRAVELERS.map(t => `
+      <button class="name-btn" data-name="${escapeHtml(t.name)}">
+        <span><span class="swatch" style="background:${t.color}"></span>${escapeHtml(t.name)}</span>
+        ${t.name === ADMIN_NAME ? '<span class="tag">Admin</span>' : ''}
+      </button>
+    `).join("");
+    grid.querySelectorAll("[data-name]").forEach(btn => {
+      btn.onclick = () => {
+        currentUser = btn.dataset.name;
+        renderApp();
+        startPolling();
+      };
+    });
+  }
+
+  function renderApp(){
+    document.getElementById("app-root").innerHTML = `
+      <header>
+        <div class="wrap">
+          <div class="top-row">
+            <div class="brand">
+              <h1>Hong Kong 2026</h1>
+              <div class="sub">Shared trip itinerary board</div>
+            </div>
+            <div>
+              <span class="who-pill" id="whoPill"></span>
+              <span class="logout-link" id="logoutLink">switch</span>
+            </div>
+          </div>
+          <div class="flight-strip">
+            <div class="flight-chip"><span class="fk">Out</span><span class="fv">Wed 18 Nov LHR T5 → HKG</span></div>
+            <div class="flight-chip"><span class="fk">Back</span><span class="fv">Fri 4 Dec HKG → LHR</span></div>
+          </div>
+        </div>
+      </header>
+      <main>
+        <div class="wrap">
+          <div class="status-bar">
+            <div class="status-text"><span class="dot-live"></span><span id="statusText">Live</span></div>
+            <button class="btn ghost" id="refreshBtn">Refresh now</button>
+          </div>
+          <div id="daysContainer"></div>
+        </div>
+      </main>
+      <footer class="legend" id="legend"></footer>
+    `;
+    const isAdmin = currentUser === ADMIN_NAME;
+    document.getElementById("whoPill").innerHTML = `Logged in as <strong>${escapeHtml(currentUser)}</strong>${isAdmin ? " (admin)" : ""}`;
+    document.getElementById("legend").innerHTML = TRAVELERS.map(t => `<span><span class="dot" style="background:${t.color}"></span>${escapeHtml(t.name)}</span>`).join("");
+    document.getElementById("logoutLink").onclick = () => {
+      currentUser = null; openAddFor = null; stopPolling(); renderLoginScreen();
+    };
+    document.getElementById("refreshBtn").onclick = async () => {
+      setStatus("Refreshing…");
+      const r = await loadItems();
+      setStatus(r.ok ? "Live" : "Offline");
+      renderDays();
+    };
+    renderDays();
+  }
+
+  function itemsForDay(date){
+    return items.filter(it => it.date === date)
+      .sort((a,b) => (a.time || "99:99").localeCompare(b.time || "99:99") || a.createdAt - b.createdAt);
+  }
+
+  function renderDays(){
+    const container = document.getElementById("daysContainer");
+    if (!container) return;
+    const days = upcomingDays();
+    if (!days.length){
+      container.innerHTML = `<div class="empty-day" style="padding:24px 4px;">Trip's over — hope it was a good one 🎉</div>`;
+      return;
+    }
+    container.innerHTML = days.map((date) => {
+      const { dow, ddate } = fmtDay(date);
+      const dayItems = itemsForDay(date);
+      const badge = date === ALL_DAYS[0]
+        ? '<span class="day-badge badge-out">Arrival day</span>'
+        : (date === ALL_DAYS[ALL_DAYS.length-1] ? '<span class="day-badge badge-back">Flight home</span>' : '');
+
+      const itemsHtml = dayItems.length ? dayItems.map(it => {
+        const canDelete = it.author === currentUser || currentUser === ADMIN_NAME;
+        const color = travelerColor(it.author);
+        return `
+          <div class="item">
+            <div class="stripe" style="background:${color}"></div>
+            <div class="item-body">
+              <div class="item-title">${escapeHtml(it.title)}</div>
+              <div class="item-meta">
+                <span class="author-chip" style="background:${color}">${escapeHtml(it.author)}</span>
+                ${canDelete ? `<button class="del-btn" data-del="${it.id}">Remove</button>` : ""}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="empty-day">Nothing planned yet.</div>`;
+
+      const formOpen = openAddFor === date;
+
+      return `
+        <div class="day-card">
+          <div class="day-head">
+            <div><div class="dow">${dow}</div><div class="ddate">${ddate}</div></div>
+            ${badge}
+          </div>
+          <div class="items">${itemsHtml}</div>
+          <div class="add-row">
+            ${formOpen ? `
+              <div class="add-form">
+                <input type="text" placeholder="What do you want to do?" id="title-${date}" maxlength="140" data-enter-save="${date}" />
+                <button class="btn primary" data-save="${date}">Add</button>
+                <button class="btn ghost" data-cancel="${date}">✕</button>
+              </div>
+            ` : `<button class="add-toggle" data-open="${date}">+ Add something for this day</button>`}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    container.querySelectorAll("[data-open]").forEach(btn => { btn.onclick = () => { openAddFor = btn.dataset.open; renderDays(); focusTitle(openAddFor); }; });
+    container.querySelectorAll("[data-cancel]").forEach(btn => { btn.onclick = () => { openAddFor = null; renderDays(); }; });
+    container.querySelectorAll("[data-save]").forEach(btn => { btn.onclick = () => addItem(btn.dataset.save); });
+    container.querySelectorAll("[data-del]").forEach(btn => { btn.onclick = () => removeItem(btn.dataset.del); });
+    container.querySelectorAll("[data-enter-save]").forEach(input => {
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") addItem(input.dataset.enterSave);
+        if (e.key === "Escape") { openAddFor = null; renderDays(); }
+      };
+    });
+  }
+
+  function focusTitle(date){ setTimeout(() => { const el = document.getElementById("title-" + date); if (el) el.focus(); }, 0); }
+
+  async function addItem(date){
+    const titleEl = document.getElementById("title-" + date);
+    const title = titleEl.value.trim();
+    if (!title){ titleEl.focus(); return; }
+
+    items.push({ id: makeId(), date, author: currentUser, title, createdAt: Date.now() });
+    openAddFor = null;
+    renderDays();
+    const ok = await saveItems();
+    if (ok) showToast("Added to the board");
+  }
+
+  async function removeItem(id){
+    if (!confirm("Remove this item for everyone?")) return;
+    items = items.filter(it => it.id !== id);
+    renderDays();
+    const ok = await saveItems();
+    if (ok) showToast("Removed");
+  }
+
+  function setStatus(msg){
+    const el = document.getElementById("statusText");
+    if (el) el.textContent = msg;
+  }
+
+  function startPolling(){
+    stopPolling();
+    pollHandle = setInterval(async () => {
+      if (saving || openAddFor) return; // don't yank the board while someone's typing
+      const r = await loadItems();
+      if (r.ok) renderDays();
+    }, REFRESH_INTERVAL_MS);
+  }
+  function stopPolling(){ if (pollHandle){ clearInterval(pollHandle); pollHandle = null; } }
+
+  // ---------- Boot ----------
+
+  async function bootLoad(){
+    if (FIREBASE_DB_URL.indexOf("REPLACE_WITH") === 0){
+      document.getElementById("loadingScreen").innerHTML = `
+        <div class="setup-warning">
+          <strong>Almost there.</strong> Open this file and set <code>FIREBASE_DB_URL</code>
+          near the top of the &lt;script&gt; to your Firebase Realtime Database URL, then
+          re-upload it. See the setup steps you were given for how to create one.
+        </div>
+      `;
+      return;
+    }
+    document.getElementById("loadingScreen").textContent = "Loading trip board…";
+    const result = await loadItems();
+    if (!result.ok){
+      document.getElementById("loadingScreen").innerHTML = `
+        Couldn't load the board (${escapeHtml(result.reason)}).<br>
+        <button class="btn primary" id="bootRetryBtn" style="margin-top:12px">Try again</button>
+      `;
+      document.getElementById("bootRetryBtn").onclick = bootLoad;
+      return;
+    }
+    document.getElementById("loadingScreen").style.display = "none";
+    renderLoginScreen();
+  }
+
+  bootLoad();
+})();
+</script>
+</body>
+</html>
