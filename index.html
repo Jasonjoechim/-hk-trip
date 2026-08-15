@@ -178,7 +178,6 @@
     { name: "Liz",      color: "#2dd4bf" },
     { name: "Tommy",    color: "#8b8dff" }
   ];
-  const REFRESH_INTERVAL_MS = 15000; // poll for others' changes every 15s
 
   function dateRange(startISO, endISO){
     const out = [];
@@ -216,7 +215,7 @@
   let items = [];
   let currentUser = null;
   let openAddFor = null;
-  let pollHandle = null;
+  let eventSource = null;
   let saving = false;
 
   function showToast(msg){
@@ -275,6 +274,56 @@
     return true;
   }
 
+  // ---------- Real-time sync ----------
+  //
+  // Firebase's REST API supports a live event stream (Server-Sent Events)
+  // on any path — no SDK needed. We PUT the whole items array on every
+  // change, so every push here has path "/" and the full array as data;
+  // applying it is just replacing our local copy. This is what makes
+  // updates land on everyone else's screen instantly instead of on a poll.
+
+  function startStream(){
+    stopStream();
+    try {
+      const es = new EventSource(`${TRIP_PATH}/items.json`);
+      es.addEventListener("put", handleStreamEvent);
+      es.addEventListener("patch", handleStreamEvent);
+      es.onopen = () => setStatus("Live");
+      es.onerror = () => setStatus("Reconnecting…"); // EventSource retries on its own
+      eventSource = es;
+    } catch (e) {
+      // Very old browsers without EventSource support: fall back to a quick poll.
+      startFallbackPolling();
+    }
+  }
+
+  function stopStream(){
+    if (eventSource){ eventSource.close(); eventSource = null; }
+    stopFallbackPolling();
+  }
+
+  function handleStreamEvent(e){
+    if (saving) return; // avoid racing our own in-flight write
+    try {
+      const payload = JSON.parse(e.data);
+      if (payload.path === "/"){
+        items = firebaseValueToArray(payload.data);
+      }
+    } catch (err) { return; }
+    if (!openAddFor) renderDays(); // don't yank the board mid-typing
+  }
+
+  let fallbackPollHandle = null;
+  function startFallbackPolling(){
+    stopFallbackPolling();
+    fallbackPollHandle = setInterval(async () => {
+      if (saving || openAddFor) return;
+      const r = await loadItems();
+      if (r.ok) renderDays();
+    }, 4000);
+  }
+  function stopFallbackPolling(){ if (fallbackPollHandle){ clearInterval(fallbackPollHandle); fallbackPollHandle = null; } }
+
   // ---------- Rendering ----------
 
   function renderLoginScreen(){
@@ -299,7 +348,7 @@
       btn.onclick = () => {
         currentUser = btn.dataset.name;
         renderApp();
-        startPolling();
+        startStream();
       };
     });
   }
@@ -339,7 +388,7 @@
     document.getElementById("whoPill").innerHTML = `Logged in as <strong>${escapeHtml(currentUser)}</strong>${isAdmin ? " (admin)" : ""}`;
     document.getElementById("legend").innerHTML = TRAVELERS.map(t => `<span><span class="dot" style="background:${t.color}"></span>${escapeHtml(t.name)}</span>`).join("");
     document.getElementById("logoutLink").onclick = () => {
-      currentUser = null; openAddFor = null; stopPolling(); renderLoginScreen();
+      currentUser = null; openAddFor = null; stopStream(); renderLoginScreen();
     };
     document.getElementById("refreshBtn").onclick = async () => {
       setStatus("Refreshing…");
@@ -448,16 +497,6 @@
     if (el) el.textContent = msg;
   }
 
-  function startPolling(){
-    stopPolling();
-    pollHandle = setInterval(async () => {
-      if (saving || openAddFor) return; // don't yank the board while someone's typing
-      const r = await loadItems();
-      if (r.ok) renderDays();
-    }, REFRESH_INTERVAL_MS);
-  }
-  function stopPolling(){ if (pollHandle){ clearInterval(pollHandle); pollHandle = null; } }
-
   // ---------- Boot ----------
 
   async function bootLoad(){
@@ -490,3 +529,4 @@
 </script>
 </body>
 </html>
+
