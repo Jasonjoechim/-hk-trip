@@ -98,6 +98,36 @@
   .btn.ghost{color:var(--muted);}
   .btn:disabled{opacity:.5;}
 
+  /* ---- Calendar grid ---- */
+  .cal-month{margin-bottom:22px;}
+  .cal-month-title{font-family:'Fraunces',serif; font-weight:700; font-size:1.05rem; margin:2px 2px 10px; color:var(--text);}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-dow{text-align:center; color:var(--muted); font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding-bottom:2px;}
+  .cal-cell{
+    position:relative; min-height:64px; border-radius:12px; border:1px solid var(--border);
+    background:rgba(255,255,255,.02); display:flex; flex-direction:column; align-items:stretch;
+    padding:5px 4px 5px; gap:2px; overflow:hidden;
+  }
+  .cal-cell.blank{border:none; background:none; min-height:30px;}
+  .cal-cell.trip-day{cursor:pointer; background:rgba(255,255,255,.045); transition:.15s ease;}
+  .cal-cell.trip-day:hover{border-color:var(--accent-2);}
+  .cal-cell.past{opacity:.42;}
+  .cal-cell.today{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset;}
+  .cal-cell.selected{border-color:var(--accent); background:rgba(255,59,110,.14); box-shadow:0 0 0 1px var(--accent) inset;}
+  .cal-cell-top{display:flex; align-items:center; justify-content:space-between; gap:3px;}
+  .cal-daynum{font-weight:800; font-size:.78rem; line-height:1;}
+  .cal-flag{font-size:.72rem; line-height:1;}
+  .cal-tasks{display:flex; flex-direction:column; gap:2px; margin-top:2px;}
+  .cal-task{
+    font-size:.6rem; font-weight:700; line-height:1.25; padding:1px 4px 1px 5px;
+    border-radius:4px; background:rgba(255,255,255,.06); color:var(--text);
+    border-left:2px solid var(--muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cal-count{font-size:.58rem; font-weight:800; color:var(--muted); padding-left:5px;}
+
+
+  /* ---- Selected day panel (reuses item styles below) ---- */
   .day-card{
     background:linear-gradient(180deg, rgba(24,31,55,.9), rgba(18,23,41,.9));
     border:1px solid var(--border); border-radius:18px; margin-bottom:16px; overflow:hidden; box-shadow:var(--shadow);
@@ -109,8 +139,9 @@
   }
   .day-head .dow{font-family:'Fraunces',serif; font-weight:700; font-size:1.15rem;}
   .day-head .ddate{color:var(--muted); font-size:.8rem;}
-  .day-badge{font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid;}
+  .day-badge{font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:999px; border:1px solid; white-space:nowrap;}
   .badge-out{color:var(--accent); border-color:rgba(255,59,110,.5); background:rgba(255,59,110,.08);}
+  .badge-arrive{color:var(--gold); border-color:rgba(242,177,52,.5); background:rgba(242,177,52,.08);}
   .badge-back{color:var(--accent-2); border-color:rgba(45,212,191,.5); background:rgba(45,212,191,.08);}
 
   .items{padding:10px 14px 6px;}
@@ -176,7 +207,8 @@
     { name: "Jason",    color: "#f2b134" },
     { name: "Jennifer", color: "#ff3b6e" },
     { name: "Liz",      color: "#2dd4bf" },
-    { name: "Tommy",    color: "#8b8dff" }
+    { name: "Tommy",    color: "#8b8dff" },
+    { name: "Kira",     color: "#4ade80" }
   ];
 
   function dateRange(startISO, endISO){
@@ -203,6 +235,43 @@
       ddate: d.toLocaleDateString("en-GB", { day: "numeric", month: "long" })
     };
   }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+
+  // Which day gets which travel badge.
+  const DEPARTURE_DATE = ALL_DAYS[0];                 // Wed 18 Nov — flying out of LHR
+  const ARRIVAL_DATE   = ALL_DAYS[1] || ALL_DAYS[0];   // Thu 19 Nov — landing in HKG
+  const FLIGHT_HOME_DATE = ALL_DAYS[ALL_DAYS.length-1];
+
+  function dayBadge(iso){
+    if (iso === DEPARTURE_DATE) return '<span class="day-badge badge-out">Departure day</span>';
+    if (iso === ARRIVAL_DATE) return '<span class="day-badge badge-arrive">Arrival day</span>';
+    if (iso === FLIGHT_HOME_DATE) return '<span class="day-badge badge-back">Flight home</span>';
+    return "";
+  }
+  function dayFlag(iso){
+    if (iso === DEPARTURE_DATE) return "🛫";
+    if (iso === ARRIVAL_DATE) return "🛬";
+    if (iso === FLIGHT_HOME_DATE) return "🏠";
+    return "";
+  }
+
+  // Distinct {year, month} pairs the trip spans, in order, for the calendar view.
+  function tripMonths(){
+    const seen = new Map();
+    ALL_DAYS.forEach(iso => {
+      const d = new Date(iso + "T00:00:00");
+      const key = d.getFullYear() + "-" + d.getMonth();
+      if (!seen.has(key)) seen.set(key, { year: d.getFullYear(), month: d.getMonth() });
+    });
+    return [...seen.values()];
+  }
+
+  function monthMeta(year, month){
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let firstWeekday = new Date(year, month, 1).getDay(); // 0=Sun..6=Sat
+    firstWeekday = (firstWeekday + 6) % 7; // convert to Mon=0..Sun=6
+    return { daysInMonth, firstWeekday };
+  }
   function escapeHtml(v){
     return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
@@ -217,6 +286,7 @@
   let openAddFor = null;
   let eventSource = null;
   let saving = false;
+  let selectedDate = null;
 
   function showToast(msg){
     const t = document.getElementById("toast");
@@ -310,7 +380,7 @@
         items = firebaseValueToArray(payload.data);
       }
     } catch (err) { return; }
-    if (!openAddFor) renderDays(); // don't yank the board mid-typing
+    if (!openAddFor) { renderCalendar(); renderDayPanel(); } // don't yank the board mid-typing
   }
 
   let fallbackPollHandle = null;
@@ -319,7 +389,7 @@
     fallbackPollHandle = setInterval(async () => {
       if (saving || openAddFor) return;
       const r = await loadItems();
-      if (r.ok) renderDays();
+      if (r.ok) { renderCalendar(); renderDayPanel(); }
     }, 4000);
   }
   function stopFallbackPolling(){ if (fallbackPollHandle){ clearInterval(fallbackPollHandle); fallbackPollHandle = null; } }
@@ -379,7 +449,8 @@
             <div class="status-text"><span class="dot-live"></span><span id="statusText">Live</span></div>
             <button class="btn ghost" id="refreshBtn">Refresh now</button>
           </div>
-          <div id="daysContainer"></div>
+          <div id="calendarContainer"></div>
+          <div id="dayPanelContainer"></div>
         </div>
       </main>
       <footer class="legend" id="legend"></footer>
@@ -394,9 +465,21 @@
       setStatus("Refreshing…");
       const r = await loadItems();
       setStatus(r.ok ? "Live" : "Offline");
-      renderDays();
+      renderCalendar();
+      renderDayPanel();
     };
-    renderDays();
+
+    // Default the selected day to today if it's within the trip, otherwise the next
+    // upcoming day, otherwise the first day of the trip.
+    if (!selectedDate || !ALL_DAYS.includes(selectedDate)){
+      const todayISO = new Date().toISOString().slice(0,10);
+      selectedDate = ALL_DAYS.includes(todayISO)
+        ? todayISO
+        : (upcomingDays()[0] || ALL_DAYS[0]);
+    }
+
+    renderCalendar();
+    renderDayPanel();
   }
 
   function itemsForDay(date){
@@ -404,68 +487,127 @@
       .sort((a,b) => (a.time || "99:99").localeCompare(b.time || "99:99") || a.createdAt - b.createdAt);
   }
 
-  function renderDays(){
-    const container = document.getElementById("daysContainer");
+  function renderCalendar(){
+    const container = document.getElementById("calendarContainer");
     if (!container) return;
-    const days = upcomingDays();
-    if (!days.length){
-      container.innerHTML = `<div class="empty-day" style="padding:24px 4px;">Trip's over — hope it was a good one 🎉</div>`;
-      return;
-    }
-    container.innerHTML = days.map((date) => {
-      const { dow, ddate } = fmtDay(date);
-      const dayItems = itemsForDay(date);
-      const badge = date === ALL_DAYS[0]
-        ? '<span class="day-badge badge-out">Arrival day</span>'
-        : (date === ALL_DAYS[ALL_DAYS.length-1] ? '<span class="day-badge badge-back">Flight home</span>' : '');
+    const todayISO = new Date().toISOString().slice(0,10);
+    const dowLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
-      const itemsHtml = dayItems.length ? dayItems.map(it => {
-        const canDelete = it.author === currentUser || currentUser === ADMIN_NAME;
-        const color = travelerColor(it.author);
+    container.innerHTML = tripMonths().map(({ year, month }) => {
+      const { daysInMonth, firstWeekday } = monthMeta(year, month);
+      const monthTitle = new Date(year, month, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+      const blanks = Array.from({ length: firstWeekday }, () => `<div class="cal-cell blank"></div>`).join("");
+
+      const cells = Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        const iso = `${year}-${pad2(month+1)}-${pad2(day)}`;
+        const isTripDay = ALL_DAYS.includes(iso);
+        if (!isTripDay){
+          return `<div class="cal-cell blank"><div class="cal-daynum" style="color:var(--muted); opacity:.35;">${day}</div></div>`;
+        }
+
+        const dayItems = itemsForDay(iso);
+        const classes = ["cal-cell", "trip-day"];
+        if (iso < todayISO) classes.push("past");
+        if (iso === todayISO) classes.push("today");
+        if (iso === selectedDate) classes.push("selected");
+
+        const flag = dayFlag(iso);
+        const MAX_SHOWN = 3;
+        const taskChips = dayItems.slice(0, MAX_SHOWN).map(it =>
+          `<div class="cal-task" style="border-left-color:${travelerColor(it.author)}" title="${escapeHtml(it.title)}">${escapeHtml(it.title)}</div>`
+        ).join("");
+        const overflow = dayItems.length > MAX_SHOWN
+          ? `<div class="cal-count">+${dayItems.length - MAX_SHOWN} more</div>` : "";
+
         return `
-          <div class="item">
-            <div class="stripe" style="background:${color}"></div>
-            <div class="item-body">
-              <div class="item-title">${escapeHtml(it.title)}</div>
-              <div class="item-meta">
-                <span class="author-chip" style="background:${color}">${escapeHtml(it.author)}</span>
-                ${canDelete ? `<button class="del-btn" data-del="${it.id}">Remove</button>` : ""}
-              </div>
+          <div class="${classes.join(" ")}" data-day="${iso}">
+            <div class="cal-cell-top">
+              <div class="cal-daynum">${day}</div>
+              <div class="cal-flag">${flag}</div>
             </div>
+            <div class="cal-tasks">${taskChips}${overflow}</div>
           </div>
         `;
-      }).join("") : `<div class="empty-day">Nothing planned yet.</div>`;
-
-      const formOpen = openAddFor === date;
+      }).join("");
 
       return `
-        <div class="day-card">
-          <div class="day-head">
-            <div><div class="dow">${dow}</div><div class="ddate">${ddate}</div></div>
-            ${badge}
-          </div>
-          <div class="items">${itemsHtml}</div>
-          <div class="add-row">
-            ${formOpen ? `
-              <div class="add-form">
-                <input type="text" placeholder="What do you want to do?" id="title-${date}" maxlength="140" data-enter-save="${date}" />
-                <button class="btn primary" data-save="${date}">Add</button>
-                <button class="btn ghost" data-cancel="${date}">✕</button>
-              </div>
-            ` : `<button class="add-toggle" data-open="${date}">+ Add something for this day</button>`}
+        <div class="cal-month">
+          <div class="cal-month-title">${monthTitle}</div>
+          <div class="cal-grid">
+            ${dowLabels.map(l => `<div class="cal-dow">${l}</div>`).join("")}
+            ${blanks}${cells}
           </div>
         </div>
       `;
     }).join("");
 
-    container.querySelectorAll("[data-open]").forEach(btn => { btn.onclick = () => { openAddFor = btn.dataset.open; renderDays(); focusTitle(openAddFor); }; });
-    container.querySelectorAll("[data-cancel]").forEach(btn => { btn.onclick = () => { openAddFor = null; renderDays(); }; });
-    container.querySelectorAll("[data-save]").forEach(btn => { btn.onclick = () => addItem(btn.dataset.save); });
-    container.querySelectorAll("[data-del]").forEach(btn => { btn.onclick = () => removeItem(btn.dataset.del); });
-    container.querySelectorAll("[data-enter-save]").forEach(input => {
+    container.querySelectorAll("[data-day]").forEach(cell => {
+      cell.onclick = () => {
+        selectedDate = cell.dataset.day;
+        openAddFor = null;
+        renderCalendar();
+        renderDayPanel();
+      };
+    });
+  }
+
+  function renderDayPanel(){
+    const panel = document.getElementById("dayPanelContainer");
+    if (!panel || !selectedDate) return;
+
+    const date = selectedDate;
+    const { dow, ddate } = fmtDay(date);
+    const dayItems = itemsForDay(date);
+    const badge = dayBadge(date);
+
+    const itemsHtml = dayItems.length ? dayItems.map(it => {
+      const canDelete = it.author === currentUser || currentUser === ADMIN_NAME;
+      const color = travelerColor(it.author);
+      return `
+        <div class="item">
+          <div class="stripe" style="background:${color}"></div>
+          <div class="item-body">
+            <div class="item-title">${escapeHtml(it.title)}</div>
+            <div class="item-meta">
+              <span class="author-chip" style="background:${color}">${escapeHtml(it.author)}</span>
+              ${canDelete ? `<button class="del-btn" data-del="${it.id}">Remove</button>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("") : `<div class="empty-day">Nothing planned yet.</div>`;
+
+    const formOpen = openAddFor === date;
+
+    panel.innerHTML = `
+      <div class="day-card">
+        <div class="day-head">
+          <div><div class="dow">${dow}</div><div class="ddate">${ddate}</div></div>
+          ${badge}
+        </div>
+        <div class="items">${itemsHtml}</div>
+        <div class="add-row">
+          ${formOpen ? `
+            <div class="add-form">
+              <input type="text" placeholder="What do you want to do?" id="title-${date}" maxlength="140" data-enter-save="${date}" />
+              <button class="btn primary" data-save="${date}">Add</button>
+              <button class="btn ghost" data-cancel="${date}">✕</button>
+            </div>
+          ` : `<button class="add-toggle" data-open="${date}">+ Add something for this day</button>`}
+        </div>
+      </div>
+    `;
+
+    panel.querySelectorAll("[data-open]").forEach(btn => { btn.onclick = () => { openAddFor = btn.dataset.open; renderDayPanel(); focusTitle(openAddFor); }; });
+    panel.querySelectorAll("[data-cancel]").forEach(btn => { btn.onclick = () => { openAddFor = null; renderDayPanel(); }; });
+    panel.querySelectorAll("[data-save]").forEach(btn => { btn.onclick = () => addItem(btn.dataset.save); });
+    panel.querySelectorAll("[data-del]").forEach(btn => { btn.onclick = () => removeItem(btn.dataset.del); });
+    panel.querySelectorAll("[data-enter-save]").forEach(input => {
       input.onkeydown = (e) => {
         if (e.key === "Enter") addItem(input.dataset.enterSave);
-        if (e.key === "Escape") { openAddFor = null; renderDays(); }
+        if (e.key === "Escape") { openAddFor = null; renderDayPanel(); }
       };
     });
   }
@@ -479,7 +621,8 @@
 
     items.push({ id: makeId(), date, author: currentUser, title, createdAt: Date.now() });
     openAddFor = null;
-    renderDays();
+    renderCalendar();
+    renderDayPanel();
     const ok = await saveItems();
     if (ok) showToast("Added to the board");
   }
@@ -487,7 +630,8 @@
   async function removeItem(id){
     if (!confirm("Remove this item for everyone?")) return;
     items = items.filter(it => it.id !== id);
-    renderDays();
+    renderCalendar();
+    renderDayPanel();
     const ok = await saveItems();
     if (ok) showToast("Removed");
   }
@@ -531,7 +675,7 @@
   document.addEventListener("visibilitychange", async () => {
     if (document.visibilityState !== "visible" || !currentUser) return;
     const r = await loadItems();
-    if (r.ok && !openAddFor) renderDays();
+    if (r.ok && !openAddFor) { renderCalendar(); renderDayPanel(); }
     startStream(); // restart the live connection fresh rather than trust a stale one
   });
 
